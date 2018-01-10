@@ -82,7 +82,7 @@ contract Remittance is Owned {
 		return true;
 	}
 
-	function() public {
+	function() payable public {
 		revert();
 	}
 
