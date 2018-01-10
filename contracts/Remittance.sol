@@ -18,7 +18,6 @@ import "./Owned.sol";
 contract Remittance is Owned {
 
 	struct RemittanceStruct {
-		address owner; // Alice
     	address exchange; // Carol
     	uint256 deadlineTimestamp; // When can get back if not sent
     	uint256 amount; // How much going to send
@@ -48,22 +47,21 @@ contract Remittance is Owned {
 	
 	// Alice create remittance
 	// Exchange = Carol
-	function Remittance(address _owner, address _exchange, bytes32 _passwordHash, uint256 _deadlineTimestamp, uint256 _amount) payable onlyActive(msg.value) public {
+	function createRemittance(address _exchange, bytes32 _passwordHash, uint256 _deadlineTimestamp) payable onlyActive(msg.value) public {
 		require(_exchange != address(0));
 
-		RemittanceStruct storage remittance = remittances[_passwordHash];
-		remittance.owner = _owner; // Alice - creator of remittance
+		RemittanceStruct storage remittance = remittances[keccak256(_passwordHash, msg.sender)];
 		remittance.exchange = _exchange; // Carols - exchange
-    	remittance.amount = _amount; // Ethers she want to send
+    	remittance.amount = msg.value; // Ethers she want to send
     	remittance.deadlineTimestamp = _deadlineTimestamp; // After this time Alice can get her ethers back
 
-		RemittanceCreated(remittance.owner, remittance.exchange, remittance.amount, remittance.deadlineTimestamp);
+		RemittanceCreated(msg.sender, remittance.exchange, remittance.amount, remittance.deadlineTimestamp);
 	}
 
 	// Carol Withdraw Alices Ethers 
 	// Before Deadline
-	function convertAndSend(bytes32 firstPasswordHash, bytes32 secondPasswordHash) public beforeDeadline(remittance.deadlineTimestamp) onlyActive(remittance.amount) returns (bool) {
-		bytes32 password = keccak256(firstPasswordHash, secondPasswordHash);
+	function convertAndSend(bytes32 firstPasswordHash, bytes32 secondPasswordHash, address _owner) public beforeDeadline(remittance.deadlineTimestamp) onlyActive(remittance.amount) returns (bool) {
+		bytes32 password = keccak256(firstPasswordHash, secondPasswordHash, _owner);
 		RemittanceStruct storage remittance = remittances[password];
 
 		require(remittance.exchange == msg.sender);
@@ -80,9 +78,7 @@ contract Remittance is Owned {
 	// Alice get her ethers back 
 	// After Deadline
 	function refund(bytes32 _passwordHash) public afterDeadline(remittance.deadlineTimestamp) onlyActive(remittance.amount) returns (bool) {
-		RemittanceStruct storage remittance = remittances[_passwordHash];
-
-		require(remittance.owner == msg.sender);
+		RemittanceStruct storage remittance = remittances[keccak256(_passwordHash, msg.sender)];
 
 		uint256 amountToGetBack = remittance.amount;
 		remittance.amount = 0;
