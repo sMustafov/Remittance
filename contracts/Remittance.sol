@@ -19,7 +19,6 @@ contract Remittance is Owned {
 
 	struct RemittanceStruct {
 		address owner; // Alice
-		address recipient; // Bob
     	address exchange; // Carol
     	uint256 deadlineTimestamp; // When can get back if not sent
     	uint256 amount; // How much going to send
@@ -27,7 +26,7 @@ contract Remittance is Owned {
 	
 	mapping(bytes32 => RemittanceStruct) public remittances;
 
-	event RemittanceCreated(address indexed _from, address indexed _to, address indexed _exchange, uint256 _amount, uint256 _deadline);
+	event RemittanceCreated(address indexed _from, address indexed _to, uint256 _amount, uint256 _deadline);
     event RemittanceConvertAndSend(address indexed _who, address indexed _to, uint256 _amount);
     event RemittanceRefunded(address indexed _who, uint256 _amount);
     event Killed(address indexed _owner);
@@ -40,16 +39,14 @@ contract Remittance is Owned {
 
 		RemittanceStruct storage remittance = remittances[_passwordHash];
 		remittance.owner = msg.sender; // Alice - creator of remittance
-		remittance.recipient = _recipient; // Bob - receiver
-		remittance.exchange = _exchange; // Carols - exchange (middlemand)
+		remittance.exchange = _exchange; // Carols - exchange
     	remittance.amount = msg.value; // Ethers she want to send
     	remittance.deadlineTimestamp = _deadlineTimestamp; // After this time Alice can get her ethers back
 
-		RemittanceCreated(remittance.owner, remittance.recipient, remittance.exchange, remittance.amount, remittance.deadlineTimestamp);
+		RemittanceCreated(remittance.owner, remittance.exchange, remittance.amount, remittance.deadlineTimestamp);
 	}
 
 	// Carol Withdraw Alices Ethers 
-	// Send to Bob
 	// Before Deadline
 	function convertAndSend(bytes32 firstPasswordHash, bytes32 secondPasswordHash) public returns (bool) {
 		bytes32 password = keccak256(firstPasswordHash, secondPasswordHash);
@@ -62,9 +59,9 @@ contract Remittance is Owned {
 		uint256 amount = remittance.amount;
 		remittance.amount = 0;
 
-		remittance.recipient.transfer(amount);
+		remittance.exchange.transfer(amount);
 
-		RemittanceConvertAndSend(msg.sender, remittance.recipient, amount);
+		RemittanceConvertAndSend(msg.sender, remittance.exchange, amount);
 		return true;
 	}
 	
