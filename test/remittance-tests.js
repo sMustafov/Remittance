@@ -12,8 +12,8 @@ contract('Remittance', function(accounts) {
     var password = "0x9d1437de893f788f85e064b803382800b046563e0a6f0c208e11a86a26aace4f";
     
     var amount = 1000000000000000000;
-    var durationLimit = 1000000000;
-    var duration = 10000000;
+    var durationLimit = 10000000000000000;
+    var duration = 1000000000000000;
 
 
     describe("create remittance", () => {
@@ -25,10 +25,12 @@ contract('Remittance', function(accounts) {
 		})
 
 		it("should create remittance correctly by the owner", async function () {
-			remittanceInstance.createRemittance(exchange, password, durationLimit, {
+			let remittance = await remittanceInstance.createRemittance(exchange, password, durationLimit, {
 				value: amount,
 				from: owner
-			}) 
+            })
+
+            assert.lengthOf(remittance.logs, 1, "There should be 1 event emitted from createRemittance!");
         })
 
         it("should throw on zero amount", async function () {
@@ -56,7 +58,7 @@ contract('Remittance', function(accounts) {
 				from: owner
             });
             
-            remittanceInstance.createRemittance(exchange, password, durationLimit, {
+            await remittanceInstance.createRemittance(exchange, password, durationLimit, {
 				value: amount,
 				from: owner
 			}) 
@@ -82,9 +84,11 @@ contract('Remittance', function(accounts) {
         })
 
         it("should be successfully called", async function () {
-			remittanceInstance.convertAndSend(firstPasswordHash, secondPasswordHash, owner, {
+			let converted = await remittanceInstance.convertAndSend(firstPasswordHash, secondPasswordHash, owner, {
 				from: exchange
-			})
+            })
+
+            assert.lengthOf(converted.logs, 1, "There should be 1 event emitted from convertAndSend!")
         })
     })
 
@@ -93,17 +97,14 @@ contract('Remittance', function(accounts) {
             remittanceInstance = await Remittance.new({
                 from: owner
             })
-
-            remittanceInstance.createRemittance(exchange, password, durationLimit, {
-				value: amount,
-				from: owner
-			}) 
         })
         
         it("should kill the contract successfully", async function () {
-            remittanceInstance.kill({
+           let killed = await remittanceInstance.kill({
                 from: owner
-            }) 
+            })
+
+            assert.lengthOf(killed.logs, 1, "There should be 1 event emitted from kill!")
         })
 
         it("should throw on wrong msg.sender, exchange can only call the function", async function () {
@@ -126,14 +127,14 @@ contract('Remittance', function(accounts) {
                 from: owner
             });
 
-            remittanceInstance.createRemittance(exchange, password, 0, {
+            await remittanceInstance.createRemittance(exchange, password, 0, {
 				value: amount,
 				from: owner
 			}) 
         })
         
         it("should throw due to durationLimit", async function () {
-            remittanceInstance.createRemittance(exchange, password, durationLimit, {
+            await remittanceInstance.createRemittance(exchange, password, durationLimit, {
 				value: amount,
 				from: owner
             }) 
@@ -156,10 +157,11 @@ contract('Remittance', function(accounts) {
         })
 
         it("should refund successfully", async function () {
-            remittanceInstance.refund(password, {
+            let refund = await remittanceInstance.refund(password, {
                 from: exchange
             })
+
+            assert.lengthOf(refund.logs, 1, "There should be 1 event emitted from createRemittance!");
         })
-        
     });
 });

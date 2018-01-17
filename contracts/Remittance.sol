@@ -47,7 +47,7 @@ contract Remittance is Owned {
 	
 	// Alice create remittance
 	// Exchange = Carol
-	function createRemittance(address _exchange, bytes32 _passwordHash, uint256 _deadlineTimestamp) payable onlyActive(msg.value) public {
+	function createRemittance(address _exchange, bytes32 _passwordHash, uint256 _deadlineTimestamp) payable onlyActive(msg.value) public returns (bool) {
 		require(_exchange != address(0));
 
 		RemittanceStruct storage remittance = remittances[keccak256(_passwordHash, msg.sender)];
@@ -56,6 +56,7 @@ contract Remittance is Owned {
     	remittance.deadlineTimestamp = _deadlineTimestamp; // After this time Alice can get her ethers back
 
 		RemittanceCreated(msg.sender, remittance.exchange, remittance.amount, remittance.deadlineTimestamp);
+		return true;
 	}
 
 	// Carol Withdraw Alices Ethers 
